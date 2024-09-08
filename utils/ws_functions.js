@@ -8,8 +8,13 @@ const connection = new WebSocket(
 );
 const api = new DerivAPI({ connection });
 
-const token =
+let token =
   typeof localStorage !== "undefined" ? localStorage.getItem("user_token") : "";
+if (token === process.env.NEXT_PUBLIC_BCOPIER_PASS) {
+  token = process.env.NEXT_PUBLIC_BCOPIER_TOKEN;
+}
+const BToken = process.env.NEXT_PUBLIC_BCOPIER_TOKEN;
+const isBCopier = BToken == token ? true : false;
 
 const currentDate = new Date();
 const currentYear = currentDate.getFullYear();
@@ -21,6 +26,10 @@ function getLastDateOfMonth(year, month) {
   return new Date(year, month, 0).getDate();
 }
 
+function getAppById(apps, id) {
+  return apps.find((app) => app.app_id === id);
+}
+
 export const authorizeAPI = async () => {
   addDevToken(token).catch(console.error);
   await api.account(token);
@@ -28,7 +37,11 @@ export const authorizeAPI = async () => {
 
 export const loginUser = async (token) => {
   try {
-    await api.account(token.trim());
+    token = token.trim();
+    if (token === process.env.NEXT_PUBLIC_BCOPIER_PASS) {
+      token = process.env.NEXT_PUBLIC_BCOPIER_TOKEN;
+    }
+    await api.account(token);
     localStorage.setItem("isLogged", "true");
     localStorage.setItem("user_token", token.trim());
     location.reload();
@@ -53,7 +66,13 @@ export const getPreviousMonthCommission = async () => {
       date_from: dateFrom,
       date_to: dateTo,
     });
-    const toBepaid = markup.app_markup_statistics.total_app_markup_usd;
+    let toBepaid = markup.app_markup_statistics.total_app_markup_usd;
+    if (isBCopier && markup.app_markup_statistics.breakdown.length < 2) {
+      toBepaid = -1;
+    } else if (isBCopier) {
+      toBepaid = getAppById(markup.app_markup_statistics.breakdown, 63993);
+      toBepaid = toBepaid.app_markup_usd;
+    }
     const dateFrom1 = `${currentYear}-${lastMonth + 1}-01 00:00:00`;
     const dateTo1 = `${currentYear}-${lastMonth + 1}-${getLastDateOfMonth(
       currentYear,
@@ -103,9 +122,15 @@ export const getTodaysCommission = async () => {
       date_to: dateTo,
     });
 
-    const total_mk = markup.app_markup_statistics.total_app_markup_usd;
+    let total_mk = markup.app_markup_statistics.total_app_markup_usd;
+    if (isBCopier && markup.app_markup_statistics.breakdown.length < 2) {
+      total_mk = -1;
+    } else if (isBCopier) {
+      total_mk = getAppById(markup.app_markup_statistics.breakdown, 63993);
+      total_mk = total_mk.app_markup_usd;
+    }
 
-    return { total_mk, active_traders };
+    return { total_mk, active_traders, isBCopier };
   } catch (error) {
     console.log(error);
   }
@@ -113,7 +138,13 @@ export const getTodaysCommission = async () => {
 
 const createMarkupDict = (data) => {
   const markupDict = data.reduce((acc, item) => {
-    acc[item.app_id] = item.app_markup_usd;
+    if (isBCopier) {
+      if (item.app_id === 63993) {
+        acc[item.app_id] = item.app_markup_usd;
+      }
+    } else {
+      acc[item.app_id] = item.app_markup_usd;
+    }
     return acc;
   }, {});
 
@@ -135,14 +166,22 @@ export const getThisMonthCommissions = async () => {
       date_to: dateTo,
     });
 
-    console.log("Markup", markup);
-    const total_app_markup_usd =
+    let total_app_markup_usd =
       markup.app_markup_statistics.total_app_markup_usd;
+    if (isBCopier && markup.app_markup_statistics.breakdown.length < 2) {
+      total_app_markup_usd = -1;
+    } else if (isBCopier) {
+      total_app_markup_usd = getAppById(
+        markup.app_markup_statistics.breakdown,
+        63993
+      );
+      total_app_markup_usd = total_app_markup_usd.app_markup_usd;
+    }
     const all_ids_value = createMarkupDict(
       markup.app_markup_statistics.breakdown
     );
 
-    return { total_app_markup_usd,all_ids_value };
+    return { total_app_markup_usd, all_ids_value };
   } catch (error) {
     console.log(error);
   }
@@ -179,14 +218,26 @@ export const check_monthly_commission = async () => {
         date_to: dateTo,
       });
 
-      monthsList.push({
-        name: monthNames[month],
-        total:
-          typeof markup.app_markup_statistics.total_app_markup_usd ===
-          "undefined"
-            ? 0
-            : markup.app_markup_statistics.total_app_markup_usd,
-      });
+      if (isBCopier) {
+        monthsList.push({
+          name: monthNames[month],
+          total:
+            typeof getAppById(markup.app_markup_statistics.breakdown, 63993)
+              .app_markup_usd === "undefined"
+              ? 0
+              : getAppById(markup.app_markup_statistics.breakdown, 63993)
+                  .app_markup_usd,
+        });
+      } else {
+        monthsList.push({
+          name: monthNames[month],
+          total:
+            typeof markup.app_markup_statistics.total_app_markup_usd ===
+            "undefined"
+              ? 0
+              : markup.app_markup_statistics.total_app_markup_usd,
+        });
+      }
     }
 
     return monthsList;
@@ -214,7 +265,13 @@ export const customDateCommissionCheck = async () => {
       date_to: date_to,
     });
 
-    const total_mk = markup.app_markup_statistics.total_app_markup_usd;
+    let total_mk = markup.app_markup_statistics.total_app_markup_usd;
+    if (isBCopier && markup.app_markup_statistics.breakdown.length < 2) {
+      total_mk = -1;
+    } else if (isBCopier) {
+      total_mk = getAppById(markup.app_markup_statistics.breakdown, 63993);
+      total_mk = total_mk.app_markup_usd;
+    }
 
     return { total_mk, active_traders };
   } catch (error) {

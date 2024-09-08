@@ -30,6 +30,7 @@ function Dashboard() {
   const [customDateActiveTraders, setCustomDateActiveTraders] = useState(0);
   const [all_app_ids, setAllAppIds] = useState({});
   const [isCheckedClicked, setIsCheckedClicked] = useState(false);
+  const [isBCopier, setIsBCopier] = useState(false);
   const isMobile = window.innerWidth <= 780;
 
   useEffect(() => {
@@ -56,6 +57,7 @@ function Dashboard() {
         }
         setTodaysCommission(commission.total_mk);
         setTodayActiveTraders(commission.active_traders);
+        setIsBCopier(commission.isBCopier);
       });
       getThisMonthCommissions().then((commission) => {
         if (typeof commission === "undefined") {
@@ -207,7 +209,7 @@ function Dashboard() {
                       )}
                     </div>
 
-                    {todaysActiveTraders > 0 && (
+                    {todaysActiveTraders > 0 && !isBCopier && (
                       <p className="text-xs text-muted-foreground">
                         Today active traders: {todaysActiveTraders}
                       </p>
@@ -279,7 +281,7 @@ function Dashboard() {
                         )}
                       </div>
 
-                      {customDateActiveTraders > 0 && (
+                      {customDateActiveTraders > 0 && !isBCopier &&  (
                         <p className="text-xs text-muted-foreground">
                           active traders: {customDateActiveTraders}
                         </p>
