@@ -71,32 +71,28 @@ function Dashboard() {
         setThisMonthCommissions(commission.total_app_markup_usd);
         setAllAppIds(commission.all_ids_value);
       });
-
-      const fetchRates = async () => {
-        try {
-          const res = await fetch("/api/exchange-rates");
-          if (!res.ok) {
-            console.log(res);
-            throw new Error("Network response was not ok");
-          }
-          const json = await res.json();
-          setExchangeRates(json.rates);
-        } catch (err) {
-          console.error("Error fetching exchange rates:", err);
-        }
-      };
-      fetchRates();
     });
+
+    const fetchRates = async () => {
+      try {
+        const res = await fetch("/api/exchange-rates");
+        if (!res.ok) {
+          console.log(res);
+          throw new Error("Network response was not ok");
+        }
+        const json = await res.json();
+        setExchangeRates(json.rates);
+      } catch (err) {
+        console.error("Error fetching exchange rates:", err);
+      }
+    };
+    fetchRates();
   }, []);
 
   useEffect(() => {
-    // Check if exchangeRates is defined and has entries
-    if (exchangeRates && Object.entries(exchangeRates).length > 0) {
+    if (Object.entries(exchangeRates).length > 0) {
       const user_country = localStorage.getItem("user_country");
-  
-      if (user_country) {
-        setLocalValue(getCurrencyCode(user_country));
-      }
+      setLocalValue(getCurrencyCode(user_country!));
     }
   }, [exchangeRates]);
 
