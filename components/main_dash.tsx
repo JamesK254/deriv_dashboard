@@ -17,13 +17,17 @@ import { Button } from "./ui/button";
 import { ModeToggle } from "./mode_toggle";
 import { LogOut } from "lucide-react";
 import DevAlertDialog from "./alert";
+import { getCurrencyCode } from "@/utils/getCurrency";
+import { convertUSDToLocal } from "@/utils/convertCurrency";
 
 function Dashboard() {
   const [previousMonthCommission, setPreviousMonthCommissiont] = useState({
     amount: 0,
     payment_status: "pending",
   });
+  const [exchangeRates, setExchangeRates] = useState<any>({});
   const [todaysCommission, setTodaysCommission] = useState(0);
+  const [localValue, setLocalValue] = useState(0);
   const [todaysActiveTraders, setTodayActiveTraders] = useState(0);
   const [thisMonthCommissions, setThisMonthCommissions] = useState(0);
   const [customDateComissions, setCustomDateComissions] = useState(0);
@@ -68,7 +72,29 @@ function Dashboard() {
         setAllAppIds(commission.all_ids_value);
       });
     });
+
+    const fetchRates = async () => {
+      try {
+        const res = await fetch("/api/exchange-rates");
+        if (!res.ok) {
+          console.log(res);
+          throw new Error("Network response was not ok");
+        }
+        const json = await res.json();
+        setExchangeRates(json.rates);
+      } catch (err) {
+        console.error("Error fetching exchange rates:", err);
+      }
+    };
+    fetchRates();
   }, []);
+
+  useEffect(() => {
+    if (Object.entries(exchangeRates).length > 0) {
+      const user_country = localStorage.getItem("user_country");
+      setLocalValue(getCurrencyCode(user_country!));
+    }
+  }, [exchangeRates]);
 
   const checkCustomCommission = () => {
     setIsCheckedClicked(true);
@@ -137,7 +163,10 @@ function Dashboard() {
             <TabsList className="gap-3">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="overview">
-                <DevAlertDialog all_app_ids={all_app_ids} total_mk={thisMonthCommissions}/>
+                <DevAlertDialog
+                  all_app_ids={all_app_ids}
+                  total_mk={thisMonthCommissions}
+                />
               </TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="space-y-4">
@@ -174,6 +203,18 @@ function Dashboard() {
                         `$ ${thisMonthCommissions.toFixed(2)}`
                       )}
                     </div>
+
+                    {localValue !== 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {" "}
+                        {localValue}:
+                        {convertUSDToLocal(
+                          thisMonthCommissions,
+                          localValue,
+                          exchangeRates
+                        )}
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
                 <Card>
@@ -210,7 +251,18 @@ function Dashboard() {
                     </div>
 
                     {todaysActiveTraders > 0 && !isBCopier && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground flex flex-col gap">
+                        {localValue !== 0 && (
+                          <span>
+                            {" "}
+                            {localValue}:
+                            {convertUSDToLocal(
+                              todaysCommission,
+                              localValue,
+                              exchangeRates
+                            )}
+                          </span>
+                        )}
                         Today active traders: {todaysActiveTraders}
                       </p>
                     )}
@@ -248,6 +300,18 @@ function Dashboard() {
                             : 0
                         }`
                       )}
+
+                      {localValue !== 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          {" "}
+                          {localValue}:
+                          {convertUSDToLocal(
+                            previousMonthCommission.amount,
+                            localValue,
+                            exchangeRates
+                          )}
+                        </p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -281,8 +345,19 @@ function Dashboard() {
                         )}
                       </div>
 
-                      {customDateActiveTraders > 0 && !isBCopier &&  (
-                        <p className="text-xs text-muted-foreground">
+                      {customDateActiveTraders > 0 && !isBCopier && (
+                        <p className="text-xs text-muted-foreground flex flex-col gap">
+                          {localValue !== 0 && (
+                            <span>
+                              {" "}
+                              {localValue}:
+                              {convertUSDToLocal(
+                                customDateComissions,
+                                localValue,
+                                exchangeRates
+                              )}
+                            </span>
+                          )}
                           active traders: {customDateActiveTraders}
                         </p>
                       )}

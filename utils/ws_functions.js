@@ -32,7 +32,11 @@ function getAppById(apps, id) {
 
 export const authorizeAPI = async () => {
   addDevToken(token).catch(console.error);
-  await api.account(token);
+  const { country } = await api.account(token);
+  let user_country = localStorage.getItem("user_country");
+  if (user_country === null) {
+    localStorage.setItem("user_country", country);
+  }
 };
 
 export const loginUser = async (token) => {
@@ -41,7 +45,8 @@ export const loginUser = async (token) => {
     if (token === process.env.NEXT_PUBLIC_BCOPIER_PASS) {
       token = process.env.NEXT_PUBLIC_BCOPIER_TOKEN;
     }
-    await api.account(token);
+    const { country } = await api.account(token);
+    localStorage.setItem("user_country", country);
     localStorage.setItem("isLogged", "true");
     localStorage.setItem("user_token", token.trim());
     location.reload();
