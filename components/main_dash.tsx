@@ -71,22 +71,22 @@ function Dashboard() {
         setThisMonthCommissions(commission.total_app_markup_usd);
         setAllAppIds(commission.all_ids_value);
       });
-    });
 
-    const fetchRates = async () => {
-      try {
-        const res = await fetch("/api/exchange-rates");
-        if (!res.ok) {
-          console.log(res);
-          throw new Error("Network response was not ok");
+      const fetchRates = async () => {
+        try {
+          const res = await fetch("/api/exchange-rates");
+          if (!res.ok) {
+            console.log(res);
+            throw new Error("Network response was not ok");
+          }
+          const json = await res.json();
+          setExchangeRates(json.rates);
+        } catch (err) {
+          console.error("Error fetching exchange rates:", err);
         }
-        const json = await res.json();
-        setExchangeRates(json.rates);
-      } catch (err) {
-        console.error("Error fetching exchange rates:", err);
-      }
-    };
-    fetchRates();
+      };
+      fetchRates();
+    });
   }, []);
 
   useEffect(() => {
