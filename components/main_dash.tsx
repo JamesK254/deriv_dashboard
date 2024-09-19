@@ -90,9 +90,13 @@ function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (Object.entries(exchangeRates).length > 0) {
+    // Check if exchangeRates is defined and has entries
+    if (exchangeRates && Object.entries(exchangeRates).length > 0) {
       const user_country = localStorage.getItem("user_country");
-      setLocalValue(getCurrencyCode(user_country!));
+  
+      if (user_country) {
+        setLocalValue(getCurrencyCode(user_country));
+      }
     }
   }, [exchangeRates]);
 
